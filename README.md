@@ -19,7 +19,7 @@
 
 **AssisstantLoop 做前台沟通，AutoLoop 做任务流转，后台 Agent 做具体工作。**
 
-当前版本：`v0.1.0`
+当前版本：[`v0.1.0`](docs/releases/v0.1.0.md)
 
 ## 它是做什么的
 
@@ -63,6 +63,8 @@ git clone --branch v0.1.0 https://github.com/Stormycry-cryp/AssisstantLoop.git
 cd AssisstantLoop
 node bin/assisstantloop.ts setup
 ```
+
+源码方式后续命令使用 `node bin/assisstantloop.ts <命令>`；安装脚本方式可直接使用 `assisstantloop`。
 
 > 已有 AutoLoop 的安装不会被接管。公开版使用独立数据目录和默认端口 `3360`；原有配置、微信账号和私人助理不会自动导入。已有微信连接不要在另一个实例里重复绑定同一账号。
 
