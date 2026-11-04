@@ -1,0 +1,36 @@
+{
+  "name": "assisstantloop",
+  "version": "0.1.0",
+  "description": "独立轻量个人助理：自然交流、微信读图、AutoLoop任务管理",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Stormycry-cryp/AssisstantLoop.git"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "agent-autoloop": "bin/agent-autoloop.ts",
+    "assisstantloop": "bin/assisstantloop.ts"
+  },
+  "scripts": {
+    "test": "node --disable-warning=ExperimentalWarning --test tests/*.test.ts",
+    "test:quick": "node --disable-warning=ExperimentalWarning --test $(ls tests/*.test.ts | grep -v /simulation.test.ts)",
+    "typecheck": "tsc -p .",
+    "format": "prettier --write \"**/*.{ts,json,yml}\"",
+    "format:check": "prettier --check \"**/*.{ts,json,yml}\"",
+    "test:nightly": "node --disable-warning=ExperimentalWarning --test --test-concurrency=1 sim/*.test.ts && node --disable-warning=ExperimentalWarning scripts/benchmark.ts --check",
+    "benchmark": "node --disable-warning=ExperimentalWarning scripts/benchmark.ts --check"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.4",
+    "prettier": "3.9.10",
+    "typescript": "7.0.2"
+  },
+  "prettier": {
+    "printWidth": 120
+  }
+}
