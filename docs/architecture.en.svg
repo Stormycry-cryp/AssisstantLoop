@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 680" role="img" aria-labelledby="t">
 <title id="t">Agent Autoloop architecture: a kernel in the middle, everything else a plugin</title>
-<desc>AssisstantLoop keeps natural report phrasing and bounded image inputs in the independent Pi channel plugin; host image paths and observations use the existing text protocol</desc>
+<desc>AssisstantLoop keeps natural report phrasing and bounded image inputs in the independent Pi channel plugin; host image paths and observations use the existing text protocol; desktop Codex runs through an external adapter, with completion confirmed from its owned native turn</desc>
 <defs>
 <style>
 svg{--bg:#faf9f5;--ink:#1d1c19;--muted:#6e6b64;--line:#d6d3cb;--card:#fff;--item:#f4f2ec;--accent:#c2491d;--core:#1d1c19;--core-ink:#faf9f5;--core-duty:#33302a;--core-chip:#282621;--core-line:#423f38;--core-sub:#b9b5ab;--core-accent:#ef8a62;--tag-bg:#3d261c;--tag-ink:#ffb08e;--you-bg:#fff4ee}

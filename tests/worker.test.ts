@@ -129,6 +129,43 @@ async function until(worker: { tick(): Promise<boolean> }, done: () => boolean, 
     await new Promise((resolve) => setTimeout(resolve, 20));
   }
 }
+
+test("a desktop relay exiting does not release its run until the desktop result or stop is confirmed", async () => {
+  const plugin = join(home, "plugins", "external");
+  mkdirSync(plugin, { recursive: true });
+  writeFileSync(
+    join(plugin, "agent.ts"),
+    `import{readFileSync,existsSync}from'node:fs';import path from'node:path';export default{command:()=>['/bin/sh','-c','exit 0'],read:()=>({error:'relay ended'}),reconcile:async(dir,cancel)=>{const f=path.join(dir,'remote.json');if(!existsSync(f))return{pending:true};const s=JSON.parse(readFileSync(f,'utf8'));return s.done?{pending:false,reading:{text:'桌面已完成',finished:true,session:'desktop'}}:{pending:true};}};`,
+  );
+  const hub = fakeHub();
+  let worker = createWorker({ hub, name: "test", wait: 0 });
+  hub.jobs.push(job({ use: "external" }));
+  await worker.tick();
+  await new Promise((r) => setTimeout(r, 100));
+  await worker.tick();
+  assert.equal(hub.results.length, 0);
+  assert.equal(worker.entries().length, 1);
+  const dir = worker.entries()[0].dir;
+  worker = createWorker({ hub, name: "test", wait: 0 });
+  await worker.tick();
+  assert.equal(hub.results.length, 0);
+  assert.equal(worker.entries()[0].dir, dir);
+  writeFileSync(join(dir, "remote.json"), JSON.stringify({ done: true }));
+  await worker.tick();
+  assert.equal(hub.results[0].summary, "桌面已完成");
+  hub.jobs.push(job({ use: "external" }));
+  await worker.tick();
+  const next = worker.entries()[0];
+  hub.cancel = [next.run];
+  await worker.tick();
+  await new Promise((r) => setTimeout(r, 100));
+  await worker.tick();
+  assert.equal(hub.results.length, 1);
+  assert.ok(worker.entries().length);
+  writeFileSync(join(next.dir, "remote.json"), JSON.stringify({ done: true }));
+  await worker.tick();
+  assert.equal(hub.results[1].outcome, "cancelled");
+});
 const worker = (hub: ReturnType<typeof fakeHub>, more: object = {}) =>
   createWorker({ hub: hub as any, name: "w1", wait: 0, ...more });
 

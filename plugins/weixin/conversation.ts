@@ -6,7 +6,7 @@ export type Action = {
   card: number | null;
   choice: number | null;
   run: number | null;
-  agent: "codex" | "pi" | null;
+  agent: "codex" | "pi" | "desktop" | null;
   subject: string | null;
   title: string | null;
 };
@@ -60,10 +60,17 @@ export function makeSnapshot(message: string, state: State, view: any, now = Dat
   );
   const targets = new Map<
     string,
-    { subject: string; agent: "codex" | "pi"; title: string; state: string; summary: string; run: number }
+    { subject: string; agent: "codex" | "pi" | "desktop"; title: string; state: string; summary: string; run: number }
   >();
   for (const run of view.runs ?? []) {
-    const agent = run.agent === "codex" ? "codex" : run.agent === "pi-opus" ? "pi" : null;
+    const agent =
+      run.agent === "codex"
+        ? "codex"
+        : run.agent === "pi-opus"
+          ? "pi"
+          : run.agent === "codex-desktop"
+            ? "desktop"
+            : null;
     if (!agent) continue;
     const event = run.events?.find((event: any) => event.source === "weixin" && /^wx-[a-z0-9-]+$/.test(event.subject));
     if (event && !targets.has(event.subject))
@@ -79,6 +86,9 @@ export function makeSnapshot(message: string, state: State, view: any, now = Dat
   }
   const known = [...targets.values()];
   const allowPi = state.selected === "pi" || /\b(pi|opus)\b|欧普斯/i.test(message);
+  const allowDesktop =
+    (view.agents ?? []).some((a: any) => a.id === "codex-desktop" && a.use === "codex-desktop") &&
+    (state.selected === "desktop" || /桌面|desktop/i.test(message));
   return {
     message,
     ...(state.dialogue?.latestImages &&
@@ -94,7 +104,7 @@ export function makeSnapshot(message: string, state: State, view: any, now = Dat
     memories: (state.dialogue?.memories ?? []).slice(-32),
     night: { key: nightKey, mayRemind: (hour >= 23 || hour < 6) && state.dialogue?.sleepNight !== nightKey },
     selectedAgent: state.selected,
-    allowedStartAgents: ["codex", ...(allowPi ? ["pi"] : [])],
+    allowedStartAgents: ["codex", ...(allowPi ? ["pi"] : []), ...(allowDesktop ? ["desktop"] : [])],
     history: [...(state.dialogue?.history ?? [])]
       .sort((a, b) => a.at - b.at)
       .slice(-24)

@@ -63,6 +63,8 @@ type Entry = {
   stopping?: number;
   why?: "cancel" | "timeout" | "finished";
   result?: Result;
+  externalReading?: Reading;
+  externalErrorSaid?: boolean;
 };
 export type WorkerHub = Pick<Hub, "work" | "started" | "result">;
 export type WorkerOptions = {
@@ -179,6 +181,8 @@ export function createWorker({
     delete entry.pid;
     delete entry.stopping;
     delete entry.why;
+    delete entry.externalReading;
+    delete entry.externalErrorSaid;
     save(entry);
     const { rule, agent } = entry.job;
     const cwd = rule.cwd.replace(/^~(?=\/)/, homedir());
@@ -260,8 +264,30 @@ export function createWorker({
   }
 
   function read(entry: Entry, adapter: Adapter, code: number | null): Reading {
+    if (entry.externalReading) return entry.externalReading;
     const { out, err } = files(entry);
     return adapter.read(snapshot(out), code, code === null ? "" : snapshot(err));
+  }
+
+  async function concludeOwned(entry: Entry, adapter: Adapter, code: number | null) {
+    if (adapter.reconcile) {
+      const limit = (entry.job.agent.timeout ?? TIMEOUT_MINUTES) * 60_000;
+      if (entry.stopping === undefined && now() - (entry.launchedAt ?? now()) > limit) stop(entry, "timeout");
+      try {
+        const state = await adapter.reconcile(entry.dir, entry.why === "cancel" || entry.why === "timeout");
+        if (state.pending) return;
+        if (state.reading) entry.externalReading = state.reading;
+        save(entry);
+      } catch {
+        if (!entry.externalErrorSaid) {
+          log(`run ${entry.run}: application state unconfirmed; holding the run`);
+          entry.externalErrorSaid = true;
+          save(entry);
+        }
+        return;
+      }
+    }
+    return conclude(entry, adapter, code);
   }
 
   function discardReceipt(entry: Entry, adapter: Adapter, problem: string) {
@@ -357,12 +383,12 @@ export function createWorker({
         if (now() - entry.stopping > STOP_GRACE) signal(entry, "SIGKILL");
         return;
       }
-      return conclude(entry, adapter, existsSync(exit) ? Number(readFileSync(exit, "utf8").trim()) : null);
+      return concludeOwned(entry, adapter, existsSync(exit) ? Number(readFileSync(exit, "utf8").trim()) : null);
     }
-    if (existsSync(exit)) return conclude(entry, adapter, Number(readFileSync(exit, "utf8").trim()));
+    if (existsSync(exit)) return concludeOwned(entry, adapter, Number(readFileSync(exit, "utf8").trim()));
     // The shell can publish its exit between the first file check and ps returning.
     if (!alive(entry)) {
-      return conclude(entry, adapter, existsSync(exit) ? Number(readFileSync(exit, "utf8").trim()) : null);
+      return concludeOwned(entry, adapter, existsSync(exit) ? Number(readFileSync(exit, "utf8").trim()) : null);
     }
     const seen = read(entry, adapter, null);
     const session = seen.session ?? (adapter.link ? (entry.resume ?? entry.session) : undefined);

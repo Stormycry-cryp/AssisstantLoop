@@ -105,6 +105,22 @@ test("Wechat conversation: rendered questions invite ordinary replies without ca
   assert.doesNotMatch(text, /回答 7|#7|回复.*[序编]号/);
 });
 
+test("Wechat desktop: only a registered desktop executor can receive an explicit request", async () => {
+  const f = fixture({
+    reply: "我交给桌面里的 Codex",
+    actions: [action("start", { agent: "desktop", title: "桌面检查" }) as any],
+  });
+  f.view.agents = [{ id: "codex-desktop", use: "codex-desktop" }];
+  await f.bridge.inbound(message("让桌面 Codex 看一下这份资料"));
+  assert.equal(f.events[0]?.type, "task.desktop");
+  assert.equal(f.events[0]?.detail, "让桌面 Codex 看一下这份资料");
+  const unconfigured = fixture({ reply: "", actions: [] });
+  const snap = makeSnapshot("让桌面处理", unconfigured.state, unconfigured.view);
+  assert.throws(() =>
+    parseDecision({ reply: "好", actions: [action("start", { agent: "desktop", title: "桌面检查" })] }, snap),
+  );
+});
+
 test("Wechat conversation: executor recommendations are visible and remain available to the next reply", () => {
   const f = fixture({ reply: "", actions: [] });
   f.view.cards = [{ ...card, recommend: 1 }];

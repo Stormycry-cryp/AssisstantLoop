@@ -18,7 +18,7 @@
           "card": { "type": ["integer", "null"] },
           "choice": { "type": ["integer", "null"] },
           "run": { "type": ["integer", "null"] },
-          "agent": { "type": ["string", "null"], "enum": ["codex", "pi", null] },
+          "agent": { "type": ["string", "null"], "enum": ["codex", "pi", "desktop", null] },
           "subject": { "type": ["string", "null"] },
           "title": { "type": ["string", "null"] }
         },

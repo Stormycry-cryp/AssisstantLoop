@@ -25,7 +25,7 @@ export type State = {
   version: 1;
   cursor: string;
   context: string;
-  selected: "codex" | "pi";
+  selected: "codex" | "pi" | "desktop";
   subjects: Record<string, string>;
   processed: string[];
   deliveries: Record<string, { version: number; ref: string; state: string }>;

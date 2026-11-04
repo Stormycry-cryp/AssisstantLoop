@@ -31,6 +31,7 @@ node --disable-warning=ExperimentalWarning --test --test-name-pattern='agent-aut
 | `command(turn)` | 返回命令参数数组；参数不作为 shell 代码执行 |
 | `read(stdout, code, stderr)` | 返回 `text`、`session`、`usage`、`error`、`finished`；运行中 `code` 为 `null` |
 | `link(session)` | 可选，会话链接；支持会话的插件可只重写错误回执 |
+| `reconcile(folder, stopping)` | 可选，外部应用实际结束后返回 reading；pending 时保持任务，转接进程退出不算结束 |
 | `check()` | 可选，能用返回 `null`，否则返回下一步怎么做 |
 
 `turn` 包含 `prompt`、`session`、`resume`、`cwd`、`access`、`model`、`effort`、`command`、`contextFile`、`folder`。`contextFile` 是资料文件，受限 CLI 需要允许读取 `folder`。`read` 要能处理未写完的输出；CLI 真正完成后才返回 `text`。
@@ -42,6 +43,10 @@ node --disable-warning=ExperimentalWarning --test --test-name-pattern='agent-aut
 ```
 
 只需要打印最后一条消息时，用内置 `command` 加参数数组即可，不必写插件。
+
+### 桌面 Codex
+
+`use: "codex-desktop"` 把 macOS 桌面作为真正的接单端，支持新任务与显式绑定已有聊天。配置、版本边界及恢复方式见[桌面插件](../plugins/codex-desktop/README.md)。`codex` 仍是后台 CLI，二者独立；未绑定的手工聊天不自动纳管。
 
 ### 浏览器接入
 

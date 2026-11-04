@@ -19,7 +19,9 @@
 
 **AssisstantLoop 做前台沟通，AutoLoop 做任务流转，后台 Agent 做具体工作。**
 
-当前版本：[`v0.1.1`](docs/releases/v0.1.1.md)
+当前版本：[`v0.1.2`](docs/releases/v0.1.2.md)
+
+新增[桌面 Codex 纳管](plugins/codex-desktop/README.md)：微信里点名桌面执行，支持新建任务、绑定已有聊天、接续、回报和停止。当前为 macOS 实验性接入，跟随桌面版本验收。
 
 ## 它是做什么的
 
@@ -59,7 +61,7 @@ curl -fsSL https://raw.githubusercontent.com/Stormycry-cryp/AssisstantLoop/main/
 要使用固定版本的源码：
 
 ```sh
-git clone --branch v0.1.1 https://github.com/Stormycry-cryp/AssisstantLoop.git
+git clone --branch v0.1.2 https://github.com/Stormycry-cryp/AssisstantLoop.git
 cd AssisstantLoop
 node bin/assisstantloop.ts setup
 ```

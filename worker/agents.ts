@@ -33,6 +33,8 @@ export type Adapter = {
   link?(session: string): string;
   /** Whether it's installed and signed in: what's wrong, in words a person can act on, or nothing. */
   check?(): string | null;
+  /** A relay can die while work continues in another application. Keep holding the run until its owner confirms. */
+  reconcile?(folder: string, stopping: boolean): Promise<{ pending: boolean; reading?: Reading }>;
 };
 
 const adapters = new Map<string, Adapter>();

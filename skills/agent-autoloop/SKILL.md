@@ -160,3 +160,5 @@ MCP 客户端的启动程序填 `node`，参数为本机引擎绝对路径 `bin/
 ## 版本与卸载
 
 `agent-autoloop --version` 显示版本和提交。`agent-autoloop uninstall` 确认后删除自身程序、链接和服务，规则、密钥和记录保留；`--yes` 只跳过确认。
+
+桌面接入用 `use: "codex-desktop"`，支持新建任务与显式绑定已有空闲聊天，见[桌面插件](../../plugins/codex-desktop/README.md)。转接退出仍核实实际轮次，未知结果不重派，不停止后来的手工轮次。

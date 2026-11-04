@@ -70,3 +70,5 @@ assisstantloop uninstall --yes
 更新只更新程序并重启本安装，不覆盖本地人设与账号；安装源码有未保存改动时会停止更新。卸载移除本项目的程序、服务和自己的命令链接，保留账号、人设、任务记录、图片与运行库等数据，是否删除由用户确认。
 
 开发检查与内核边界见 [AGENTS.md](AGENTS.md)。原始核心安装器保存在 `scripts/install-core.sh`，只用于上游兼容检查；公开版用户使用根目录安装器和 `assisstantloop setup`。
+
+桌面 Codex 可按[桌面插件](plugins/codex-desktop/README.md)作为独立执行者接入：支持新建任务和显式绑定已有空闲聊天，不改变首次人设与微信引导顺序，不自动纳管其他手工聊天。
