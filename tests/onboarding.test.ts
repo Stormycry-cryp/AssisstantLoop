@@ -14,7 +14,7 @@ import { blankState } from "../plugins/weixin/bridge.ts";
 test("public onboarding: choose style, name and address before WeChat; keep editable persona private", async () => {
   const home = mkdtempSync(join(tmpdir(), "assistant-persona-"));
   const prompts: string[] = [],
-    replies = ["2", "小林", "阿明"];
+    replies = ["2", "小林", "阿明", "主要协助项目，闲聊可以幽默，别反复催我"];
   try {
     const p = await configurePersona(home, async (q) => {
       prompts.push(q);
@@ -23,10 +23,12 @@ test("public onboarding: choose style, name and address before WeChat; keep edit
     assert.equal(p.style, "professional");
     assert.equal(p.name, "小林");
     assert.equal(p.owner, "阿明");
+    assert.equal((p as any).preferences, "主要协助项目，闲聊可以幽默，别反复催我");
     assert.equal(PRESETS.length, 3);
     const file = join(home, "persona.md");
     assert.equal(statSync(file).mode & 0o777, 0o600);
     assert.match(readFileSync(file, "utf8"), /小林/);
+    assert.match(readFileSync(file, "utf8"), /主要协助项目/);
     assert.ok(prompts.every((q) => !q.includes("微信")));
     const preserved = await configurePersona(home, async () => {
       throw new Error("existing profile must survive an update");

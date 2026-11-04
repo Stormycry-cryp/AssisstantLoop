@@ -13,7 +13,7 @@ export const PRESETS = [
   { id: "warm", name: "温和自然", text: "像熟悉的同事聊天，可有一点幽默和关心，不黏人、不说教" },
 ];
 type Prompt = (question: string, secret?: boolean) => Promise<string>;
-type Profile = { version: 1; style: string; name: string; owner: string };
+type Profile = { version: 1; style: string; name: string; owner: string; preferences?: string };
 type Flags = Record<string, string | true>;
 const ROOT = path.join(import.meta.dirname, "..");
 const safe = (text: string, limit = 40) => {
@@ -24,7 +24,8 @@ const safe = (text: string, limit = 40) => {
 };
 export async function configurePersona(home: string, ask: Prompt, options: Flags = {}, edit = false): Promise<Profile> {
   const file = path.join(home, "assistant.json");
-  if (existsSync(file) && !edit && !["preset", "name", "owner"].some((key) => options[key])) return loadJson(file);
+  if (existsSync(file) && !edit && !["preset", "name", "owner", "preferences"].some((key) => options[key]))
+    return loadJson(file);
   const previous: Partial<Profile> = existsSync(file) ? loadJson(file) : {};
   const choice =
     typeof options.preset === "string"
@@ -42,14 +43,22 @@ export async function configurePersona(home: string, ask: Prompt, options: Flags
       ? options.owner
       : (await ask(`希望它怎么称呼你 [${previous.owner ?? "你"}]：`)) || previous.owner || "你",
   );
-  const profile: Profile = { version: 1, style: preset.id, name, owner };
+  const supplied = ["preset", "name", "owner"].every((key) => typeof options[key] === "string");
+  const preferenceText =
+    typeof options.preferences === "string"
+      ? options.preferences
+      : supplied
+        ? (previous.preferences ?? "")
+        : await ask("还有什么职责、性格或相处偏好？可写一句，留空沿用通用人设：");
+  const preferences = preferenceText.trim() ? safe(preferenceText, 1000) : "";
+  const profile: Profile = { version: 1, style: preset.id, name, owner, preferences };
   mkdirSync(home, { recursive: true, mode: 0o700 });
   saveJson(file, profile);
   const { writeFileSync, renameSync } = await import("node:fs");
   const persona = path.join(home, "persona.md");
   writeFileSync(
     `${persona}.tmp`,
-    `你的名字是 ${name}，是使用者的个人助理\n对使用者的称呼：${owner}\n沟通风格：${preset.text}\n\n可以主动汇报新进展、新结果和新风险\n同一件事不换句话反复说，问过一次就等待回复\n没有实际执行的事不说已完成，不编造后台活动\n人设只改变表达，不增加目录、工具或执行权限\n`,
+    `你的名字是 ${name}，是使用者的个人助理\n对使用者的称呼：${owner}\n沟通风格：${preset.text}\n具体偏好：${preferences || "沿用通用人设，不另设个人背景"}\n\n可以主动汇报新进展、新结果和新风险\n同一件事不换句话反复说，问过一次就等待回复\n没有实际执行的事不说已完成，不编造后台活动\n人设只改变表达，不增加目录、工具或执行权限\n`,
     { mode: 0o600 },
   );
   renameSync(`${persona}.tmp`, persona);

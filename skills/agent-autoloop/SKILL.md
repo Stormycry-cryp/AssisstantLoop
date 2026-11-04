@@ -5,7 +5,7 @@ description: 配置 Agent 自动化中台：加规则、接新的事件插件、
 
 # Agent 自动化中台
 
-AssisstantLoop 公开版在 AutoLoop 外围增加独立 Pi 微信前台。安装先读根目录 INSTALL.md，先给用户简洁、专业、温和三个人设选项，再设置名字和称呼，之后才引导微信连接；已有回答不重复询问。个性设置只写本安装数据目录 persona.md，基础人设在 plugins/weixin/persona.md，不带作者私人设定。前台固定使用 Agent Plan deepseek-v4.1-flash、low 思考，独立 Pi SDK，不复用 Codex 登录。允许主动汇报新进展、新风险和状态变化，同一件事不反复问；同一回执的提问、结案与摘要去重。图片为私有资料，保存在任务工作区 attachments/，最多 32 张、32 MiB，不自动清理。
+AssisstantLoop 公开版在 AutoLoop 外围增加独立 Pi 微信前台。安装先读根目录 INSTALL.md，先给用户简洁、专业、温和三个人设选项，再设置名字、称呼和可选具体偏好，之后才引导微信连接；已有回答不重复询问。个性设置只写本安装数据目录 persona.md，基础人设在 plugins/weixin/persona.md，不带作者私人设定。前台固定使用 Agent Plan deepseek-v4.1-flash、low 思考，独立 Pi SDK，不复用 Codex 登录。允许主动汇报新进展、新风险和状态变化，同一件事不反复问；同一回执的提问、结案与摘要去重。图片为私有资料，保存在任务工作区 attachments/，最多 32 张、32 MiB，不自动清理。
 
 协议全文在 `docs/protocol.md`，这里是怎么做。程序在 `~/.assisstantloop/app`，规则在 `~/.assisstantloop/rules.json`，配置和密钥在 `~/.assisstantloop/config.json`。
 

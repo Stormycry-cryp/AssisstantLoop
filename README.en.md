@@ -4,13 +4,13 @@
 
 A small personal assistant for natural conversation, image input and task handoff through personal WeChat. An independent Pi front desk talks with you; the included AutoLoop kernel queues, resumes and records work; a backend agent performs it.
 
-Current release: **v0.1.0**. macOS / Linux, Node.js 24+, Git and npm. The first-run wizard uses an installed, authenticated Codex CLI as its backend. The independent front desk uses your own Volcengine Agent Plan key with `deepseek-v4.1-flash` and low reasoning; it does not reuse Codex authentication.
+Current release: **v0.1.1**. macOS / Linux, Node.js 24+, Git and npm. The first-run wizard uses an installed, authenticated Codex CLI as its backend. The independent front desk uses your own Volcengine Agent Plan key with `deepseek-v4.1-flash` and low reasoning; it does not reuse Codex authentication.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Stormycry-cryp/AssisstantLoop/main/install.sh | sh
 ```
 
-The wizard asks for a persona first: concise, professional or warm. Choose the assistant's name and how it addresses you. Personal settings stay in `~/.assisstantloop/persona.md`, outside the checkout, and survive updates. Next, choose whether to link WeChat now or later. A key is entered privately, the pinned Pi SDK and terminal QR tool are installed, and the user scans through WeChat's ClawBot entry. Login confirmation must be performed by the user.
+The wizard asks for a persona first: concise, professional or warm. Choose the assistant's name, how it addresses you, and optional responsibilities or personal style preferences. A generic template supplies a reliable, slightly humorous colleague-like tone without the author's identity or local settings. Personal settings stay in `~/.assisstantloop/persona.md`, outside the checkout, and survive updates. Next, choose whether to link WeChat now or later. A key is entered privately, the pinned Pi SDK and terminal QR tool are installed, and the user scans through WeChat's ClawBot entry. Login confirmation must be performed by the user.
 
 ```sh
 assisstantloop persona       # Change your personal settings

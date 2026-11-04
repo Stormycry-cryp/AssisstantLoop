@@ -5,7 +5,7 @@
 ## 给协助安装的 Agent
 
 1. 先读 README、项目 AGENTS、协议和微信插件说明，检查 Node.js 24+、Git、npm 与可用的 Codex CLI。
-2. 安装程序后，**先让用户选自己的助理人设**：简洁直接、专业有条理、温和自然；再问名字和希望如何称呼。给选项，不能替用户把作者的人设照搬过来。
+2. 安装程序后，**先让用户选自己的助理人设**：简洁直接、专业有条理、温和自然；再问名字、希望如何称呼，以及可选的职责、性格和相处偏好。给选项，不能替用户把作者的人设照搬过来。
 3. 用 `assisstantloop setup` 写入本机人设，之后才引导连接微信。用户已经回答的选项直接带入，不重复询问。
 4. 微信可以选择现在连接或稍后。现在连接时，由用户提供自己的 Agent Plan Key，在终端隐藏输入；不要让用户把 Key 发在聊天里，也不要把 Key 放到命令参数或日志。
 5. 从微信的“我 → 设置 → 插件 → ClawBot”扫码，由用户亲自确认。不得复制别人账号、绕过扫码、或为演示启动同一账号的第二个监听。
@@ -14,7 +14,7 @@
 示例：已知道用户的选择后，可以用以下形式跳过重复的人设询问。不要替真实用户预选示例内容。
 
 ```sh
-assisstantloop setup --preset concise --name 小助理 --owner 你
+assisstantloop setup --preset concise --name 小助理 --owner 你 --preferences "用户已明确的偏好"
 ```
 
 ## 安装
@@ -23,7 +23,7 @@ assisstantloop setup --preset concise --name 小助理 --owner 你
 curl -fsSL https://raw.githubusercontent.com/Stormycry-cryp/AssisstantLoop/main/install.sh | sh
 ```
 
-首次向导顺序为：人设 → 名字与称呼 → 初始化任务中台 → 选择微信连接 → Agent Plan Key → 固定 Pi 运行库 → 本地二维码 → 本人扫码 → 规则与后台服务。
+首次向导顺序为：通用模板与风格 → 名字与称呼 → 可选具体偏好 → 初始化任务中台 → 选择微信连接 → Agent Plan Key → 固定 Pi 运行库 → 本地二维码 → 本人扫码 → 规则与后台服务。
 
 脚本通过 `/dev/tty` 在终端完成交互，支持 `curl | sh`。没有交互终端的环境必须先收集真实用户的选择，再显式传参；不能因为没有终端就默认同意扫码、使用演示 Key 或修改系统权限。
 

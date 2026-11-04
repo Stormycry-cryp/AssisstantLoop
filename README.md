@@ -19,7 +19,7 @@
 
 **AssisstantLoop 做前台沟通，AutoLoop 做任务流转，后台 Agent 做具体工作。**
 
-当前版本：[`v0.1.0`](docs/releases/v0.1.0.md)
+当前版本：[`v0.1.1`](docs/releases/v0.1.1.md)
 
 ## 它是做什么的
 
@@ -59,7 +59,7 @@ curl -fsSL https://raw.githubusercontent.com/Stormycry-cryp/AssisstantLoop/main/
 要使用固定版本的源码：
 
 ```sh
-git clone --branch v0.1.0 https://github.com/Stormycry-cryp/AssisstantLoop.git
+git clone --branch v0.1.1 https://github.com/Stormycry-cryp/AssisstantLoop.git
 cd AssisstantLoop
 node bin/assisstantloop.ts setup
 ```
@@ -82,9 +82,9 @@ node bin/assisstantloop.ts setup
 | 专业有条理 | 结论、必要依据和下一步，有条理地交代 |
 | 温和自然 | 像熟悉的同事，有一点幽默和关心 |
 
-再由你给它起名字、设置它对你的称呼。
+再由你给它起名字、设置它对你的称呼，并补充希望它主要帮什么、性格与相处偏好；可以留空。
 
-基础人设只保留靠谱、坦诚、自然沟通、不编造完成情况、尊重授权，以及不反复念叨同一件事。你的个性设置存在本机 `~/.assisstantloop/persona.md`，可以继续编辑，更新程序不会覆盖。
+公版附带一份通用人设：靠谱细心、有一点幽默、像熟悉同事一样交流，能关心但不黏人；不编造完成情况、尊重授权、不反复念叨同一件事。它不含作者的名字、私人背景或本机配置，具体的人设由你在安装时决定。你的个性设置存在本机 `~/.assisstantloop/persona.md`，可以继续编辑，更新程序不会覆盖。
 
 之后想重选：
 
