@@ -43,3 +43,5 @@ jobs:
         run: npm test
       - if: steps.scope.outputs.scope != 'docs'
         run: sh scripts/install-smoke.sh
+      - if: steps.scope.outputs.scope != 'docs'
+        run: sh scripts/assistant-install-smoke.sh
