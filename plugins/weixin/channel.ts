@@ -122,7 +122,8 @@ export default async function weixin({
     if (!activity) return;
     while (!signal.aborted) {
       try {
-        await activity.tick(await localOwner.state(), source.tell);
+        if (options.notifyObservedCompletions === false) await activity.refresh(await localOwner.state());
+        else await activity.tick(await localOwner.state(), source.tell);
       } catch {
         if (!signal.aborted) report("本机会话状态暂未确认，保留待汇报记录");
       }

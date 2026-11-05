@@ -74,3 +74,5 @@ assisstantloop uninstall --yes
 桌面 Codex 可按[桌面插件](plugins/codex-desktop/README.md)作为独立执行者接入：支持新建任务和显式绑定已有空闲聊天，不改变首次人设与微信引导顺序，不自动纳管其他手工聊天。
 
 本机手工会话观察是可选项；用户同意后设置 `observeLocalAgents: true`，并按[微信说明](plugins/weixin/README.md#本机手工会话与进程读取)登记仅有 `orchestration:read` 的 Pi 观察凭据。不要复制其他安装的凭据，不把观察会话自动变成可操作任务。
+
+升级后旧通知草稿缺少原生轮次或完成时间证据时仅保留核实，不自动补发；关闭自动播报不会关闭按需查询。

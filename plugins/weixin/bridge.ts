@@ -29,6 +29,7 @@ export type Card = {
 };
 export type State = {
   binding?: string;
+  invalidatedNotices?: number[];
   version: 1;
   cursor: string;
   context: string;
@@ -98,6 +99,15 @@ export class Bridge {
     let mustReport = card.kind === "notice" && (card.state === "closed" || card.text.startsWith("本机任务状态更新\n"));
     const prior = this.state.deliveries[String(card.id)];
     const ref = prior?.ref ?? card.ref ?? `autoloop-card-${card.id}`;
+    if (card.kind === "notice" && this.state.invalidatedNotices?.includes(card.id)) {
+      const correctedRef = prior?.ref ?? `corrected-${card.id}`;
+      this.state.deliveries[String(card.id)] = { version: card.version, ref: correctedRef, state: card.state };
+      delete this.state.drafts?.[String(card.id)];
+      this.deps.save();
+      await this.deps.channel.delivered(card.id, card.version, correctedRef);
+      return;
+    }
+
     if (!prior && Object.keys(this.state.deliveries).length >= 256) {
       const retired = Object.keys(this.state.deliveries).find((id) =>
         ["done", "closed"].includes(this.state.deliveries[id].state),

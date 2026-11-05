@@ -27,8 +27,25 @@ test("native monitor: baseline is quiet, observed completion is durable once, an
   let count = 0;
   const scan = async () => ({
     sessions: [
-      { provider: "codex", id: "manual", turn: "one", title: "work", status, summary: "result" },
-      { provider: "codex", id: "managed", turn: "two", title: "managed", status, summary: "managed result" },
+      {
+        provider: "codex",
+        id: "manual",
+        turn: "one",
+        title: "work",
+        status,
+        completedAt: status === "completed" ? Date.now() + 1 : undefined,
+        summaryVerified: true,
+        summary: "result",
+      },
+      {
+        provider: "codex",
+        id: "managed",
+        turn: "two",
+        title: "managed",
+        status,
+        completedAt: status === "completed" ? Date.now() + 1 : undefined,
+        summary: "managed result",
+      },
     ],
     issues: [],
   });
@@ -142,7 +159,18 @@ test("native completion reaches a real temporary hub once after a lost acknowled
     owner = hubClient(url, runtime.addKey("owner", "me"));
   let status = "running";
   const scan = async () => ({
-    sessions: [{ provider: "pi", id: "manual", turn: "one", title: "native task", status, summary: "native result" }],
+    sessions: [
+      {
+        provider: "pi",
+        id: "manual",
+        turn: "one",
+        title: "native task",
+        status,
+        completedAt: status === "completed" ? Date.now() + 1 : undefined,
+        summaryVerified: true,
+        summary: "native result",
+      },
+    ],
     issues: [],
   });
   try {
@@ -180,6 +208,7 @@ test("native Pi labels: application, project and model are reported separately",
         turn: "one",
         title: "review task",
         status,
+        completedAt: status === "completed" ? Date.now() + 1 : undefined,
         summary: "done",
         app: "Opus Agent",
         project: "Example Project",
@@ -201,6 +230,134 @@ test("native Pi labels: application, project and model are reported separately",
     assert.match(text, /本机.*Opus Agent/);
     assert.match(text, /Example Project/);
     assert.match(text, /claude-opus-5-5/);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("native history recovery: old running or unknown records becoming terminal cannot masquerade as new completions", async () => {
+  for (const previous of ["running", "unknown"]) {
+    const home = mkdtempSync(join(tmpdir(), "autoloop-old-recovery-"));
+    let status = previous;
+    const completedAt = Date.now() - 86400000;
+    const scan = async () => ({
+      sessions: [
+        {
+          provider: "pi",
+          id: "historical",
+          turn: "old-turn",
+          title: "old video task",
+          status,
+          summary: "old video result",
+          completedAt,
+        },
+      ],
+      issues: [],
+    });
+    try {
+      let monitor = new ActivityMonitor(home, scan);
+      await monitor.tick({}, async () => assert.fail("baseline"));
+      status = "completed";
+      monitor = new ActivityMonitor(home, scan);
+      await monitor.tick({}, async () => assert.fail("old history replayed as new"));
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  }
+});
+
+test("native notification recovery: an old draft without completion evidence is retained but cannot be emitted", async () => {
+  const home = mkdtempSync(join(tmpdir(), "autoloop-unverified-draft-"));
+  const { mkdirSync, writeFileSync, readFileSync } = await import("node:fs");
+  mkdirSync(join(home, "local-activity"));
+  writeFileSync(
+    join(home, "local-activity/state.json"),
+    JSON.stringify({ startedAt: Date.now(), seen: {}, pending: { "n-old": "old video result" } }),
+  );
+  try {
+    const monitor = new ActivityMonitor(home, async () => ({ sessions: [], issues: [] }));
+    await monitor.tick({}, async () => assert.fail("unverified old draft sent"));
+    assert.ok(readFileSync(join(home, "local-activity/state.json"), "utf8").includes("old video result"));
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("native Codex completion timestamps normalize epoch seconds rather than parsing them as calendar strings", () => {
+  const r = codexActivity(
+    [
+      {
+        type: "event_msg",
+        timestamp: "2026-11-05T04:00:00Z",
+        payload: { type: "task_complete", turn_id: "one", completed_at: 1793851200, last_agent_message: "done" },
+      },
+    ],
+    0,
+  );
+  assert.equal(r.completedAt, 1793851200000);
+});
+
+test("native Pi results: a previous turn message cannot be reported as the current turn result", async () => {
+  const { piFinal } = await import("../plugins/weixin/activity.ts");
+  const projection = {
+    thread: { id: "thread" },
+    runs: [{ id: "new", threadId: "thread", status: "completed" }],
+    messages: [{ threadId: "thread", runId: "old", role: "assistant", streaming: false, text: "old video result" }],
+  };
+  assert.equal(piFinal(projection, "thread", "new").summaryVerified, false);
+  projection.messages.push({
+    threadId: "thread",
+    runId: "new",
+    role: "assistant",
+    streaming: false,
+    text: "current room result",
+  });
+  assert.equal(piFinal(projection, "thread", "new").summary, "current room result");
+  assert.equal(piFinal(projection, "other-thread", "new").summaryVerified, false);
+});
+
+test("native pending recovery: legacy text is replaced only by fresh matching native evidence", async () => {
+  const home = mkdtempSync(join(tmpdir(), "autoloop-rebind-pending-"));
+  const { mkdirSync, writeFileSync } = await import("node:fs");
+  const { createHash } = await import("node:crypto");
+  const since = Date.now() - 10000,
+    key =
+      "n-" +
+      createHash("sha256")
+        .update(JSON.stringify(["pi:current", "turn", "completed"]))
+        .digest("hex")
+        .slice(0, 60);
+  mkdirSync(join(home, "local-activity"));
+  writeFileSync(
+    join(home, "local-activity/state.json"),
+    JSON.stringify({
+      startedAt: since,
+      seen: { "pi:current": { turn: "turn", status: "completed" } },
+      pending: { [key]: "unverified old video text" },
+    }),
+  );
+  try {
+    const monitor = new ActivityMonitor(home, async () => ({
+      sessions: [
+        {
+          provider: "pi",
+          id: "current",
+          turn: "turn",
+          title: "room",
+          status: "completed",
+          completedAt: Date.now() - 1000,
+          summary: "current room result",
+          summaryVerified: true,
+        },
+      ],
+      issues: [],
+    }));
+    let sent = "";
+    await monitor.tick({}, async (k, t) => {
+      sent = t;
+    });
+    assert.match(sent, /current room result/);
+    assert.doesNotMatch(sent, /old video/);
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

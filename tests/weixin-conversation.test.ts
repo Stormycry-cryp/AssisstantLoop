@@ -442,3 +442,50 @@ test("Wechat native labels: a running Opus application is prioritized and retain
   assert.equal(s.model, "claude-opus-5-5");
   assert.equal((s as any).id, undefined);
 });
+
+test("Wechat current status: historical terminal summaries are not current work, and corrected notices retain their correction", () => {
+  const f = fixture({ reply: "在", actions: [] });
+  (f.state as any).invalidatedNotices = [28];
+  f.state.dialogue = { history: [{ id: "card-28-1", role: "assistant", text: "视频已完成", at: 1 }] };
+  f.view.localActivity = {
+    since: Date.now() - 1000,
+    issues: [],
+    sessions: [
+      {
+        provider: "codex",
+        id: "old-unknown",
+        turn: "old-turn",
+        title: "old video unknown",
+        status: "unknown",
+        summary: "",
+        updatedAt: Date.now() - 86400000,
+      },
+      {
+        provider: "pi",
+        id: "old",
+        turn: "old",
+        title: "old video",
+        status: "completed",
+        summary: "old video result",
+        completedAt: Date.now() - 86400000,
+      },
+      {
+        provider: "pi",
+        id: "current",
+        turn: "new",
+        title: "room project",
+        status: "running",
+        summary: "",
+        app: "Opus Agent",
+        project: "Example Room",
+      },
+    ],
+  };
+  const s = makeSnapshot("现在有什么任务在跑", f.state, f.view);
+  assert.equal(s.externalActivity?.sessions.length, 1);
+  assert.equal(s.externalActivity?.sessions[0].title, "room project");
+  assert.equal((s.history[0] as any).corrected, true);
+  const history = makeSnapshot("之前的视频任务怎样了", f.state, f.view);
+  assert.equal(history.externalActivity?.sessions.length, 3);
+  assert.ok((history.externalActivity?.sessions.find((s) => s.title === "old video") as any).historical);
+});

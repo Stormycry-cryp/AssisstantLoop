@@ -91,7 +91,13 @@ export function makeSnapshot(message: string, state: State, view: any, now = Dat
   const allowDesktop =
     (view.agents ?? []).some((a: any) => a.id === "codex-desktop" && a.use === "codex-desktop") &&
     (state.selected === "desktop" || /桌面|desktop/i.test(message));
-  const external = view.localActivity as { sessions: Activity[]; issues: string[] } | undefined;
+  const external = view.localActivity as { sessions: Activity[]; issues: string[]; since?: number } | undefined;
+  const since = external?.since ?? now;
+  const includeHistory = /历史|以前|之前|上次|过去|做过|前几天|昨天/.test(message);
+  const isHistorical = (s: Activity) =>
+    (s.status === "unknown" && (!s.turn || !(s.updatedAt! >= since))) ||
+    (["completed", "interrupted", "failed", "cancelled"].includes(s.status) &&
+      !(Number.isFinite(s.completedAt) && s.completedAt! > since));
   return {
     message,
     ...(state.dialogue?.latestImages &&
@@ -105,6 +111,7 @@ export function makeSnapshot(message: string, state: State, view: any, now = Dat
     ...(external && {
       externalActivity: {
         sessions: [...external.sessions]
+          .filter((s) => includeHistory || !isHistorical(s))
           .sort(
             (a, b) =>
               Number(b.status === "running") - Number(a.status === "running") ||
@@ -120,7 +127,12 @@ export function makeSnapshot(message: string, state: State, view: any, now = Dat
             status: s.status,
             summary: s.summary,
             project: s.project,
+            completedAt: Number.isFinite(s.completedAt)
+              ? new Date(s.completedAt!).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false })
+              : null,
+            historical: isHistorical(s),
           })),
+        unconfirmedHistoryCount: external.sessions.filter((s) => s.status === "unknown" && isHistorical(s)).length,
         issues: external.issues,
         scope: "本机最近的 Codex 与 Pi 会话，只读观察，未导入为可控制事项",
       },
@@ -134,7 +146,14 @@ export function makeSnapshot(message: string, state: State, view: any, now = Dat
     history: [...(state.dialogue?.history ?? [])]
       .sort((a, b) => a.at - b.at)
       .slice(-24)
-      .map(({ role, text }) => ({ role, text })),
+      .map(({ id, role, text }) => ({
+        role,
+        text,
+        ...((state.invalidatedNotices ?? []).slice(-64).some((n) => id?.startsWith(`card-${n}-`)) && {
+          corrected: true,
+          correction: "这条助手消息已由后续核实更正，不能作为当前任务状态；相关历史会话已经结束，不代表新进展",
+        }),
+      })),
     questions: (view.cards ?? [])
       .filter((card: any) => card.state === "open" && state.deliveries[String(card.id)])
       .slice(0, 20)

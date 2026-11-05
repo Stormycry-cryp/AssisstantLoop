@@ -143,3 +143,15 @@ test("Wechat reports: a wording failure cannot swallow an actual business result
   assert.equal(f.sent.length, 1);
   assert.match(f.sent[0], /真实进程采样/);
 });
+
+test("Wechat corrections: an invalidated notice is acknowledged without resending or rewording it", async () => {
+  const notice = card(32, "notice", "closed", { text: "outdated partial explanation" }),
+    f = setup([], [notice]);
+  f.state.invalidatedNotices = [32];
+  f.deps.present = async () => {
+    assert.fail("corrected notice must not be reworded");
+  };
+  await f.bridge.deliver(notice);
+  assert.equal(f.sent.length, 0);
+  assert.deepEqual(f.ack, [32]);
+});
