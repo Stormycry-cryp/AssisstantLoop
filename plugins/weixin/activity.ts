@@ -25,6 +25,9 @@ export type Activity = {
   updatedAt?: number;
   completedAt?: number;
   project?: string;
+  app?: string;
+  model?: string;
+  machine?: string;
 };
 type Snapshot = { sessions: Activity[]; issues: string[] };
 type Scan = () => Promise<Snapshot>;
@@ -112,6 +115,8 @@ export function readCodex(root = process.env.CODEX_HOME ?? path.join(homedir(), 
             activity = codexActivity(data.rows, data.mtime);
           return [
             {
+              app: "Codex",
+              machine: "本机",
               provider: "codex",
               id: row.id,
               title: publicText(row.title, 80),
@@ -123,6 +128,8 @@ export function readCodex(root = process.env.CODEX_HOME ?? path.join(homedir(), 
         } catch {
           return [
             {
+              app: "Codex",
+              machine: "本机",
               provider: "codex",
               id: row.id,
               title: publicText(row.title, 80),
@@ -183,6 +190,10 @@ export async function readPi(home: string, signal?: AbortSignal): Promise<Activi
     .slice(0, 40)
     .map((t: any) => ({
       provider: "pi",
+      app: "Opus Agent",
+      machine: "本机",
+      model: publicText(t.modelSelection?.model?.split("/").at(-1) ?? "未确认", 80),
+      project: publicText(data.projects?.find((p: any) => p.id === t.projectId)?.title ?? "未确认项目", 80),
       id: t.id,
       turn: t.activeRunId ?? t.latestRunId ?? "",
       title: publicText(t.title ?? "Pi 会话", 80),
@@ -282,7 +293,7 @@ export class ActivityMonitor {
           const label =
             s.status === "completed" ? "这一轮已结束" : s.status === "failed" ? "这一轮失败了" : "这一轮已停止";
           this.saved.pending[key] =
-            `本机任务状态更新\n${s.provider === "codex" ? "Codex" : "Pi"}：${s.title}\n${label}\n${s.summary || "没有可核实的最终摘要"}`;
+            `本机任务状态更新\n${s.machine ?? "本机"} ${s.app ?? (s.provider === "codex" ? "Codex" : "Pi")} · ${s.project ?? "未确认项目"}\n${s.model ? "模型：" + s.model + "\n" : ""}${s.title}\n${label}\n${s.summary || "没有可核实的最终摘要"}`;
         }
         this.saved.seen[id] = { turn: s.turn, status: s.status };
       }

@@ -104,13 +104,23 @@ export function makeSnapshot(message: string, state: State, view: any, now = Dat
       }),
     ...(external && {
       externalActivity: {
-        sessions: view.localActivity.sessions.slice(0, 40).map((s: any) => ({
-          provider: s.provider,
-          title: s.title,
-          status: s.status,
-          summary: s.summary,
-          project: s.project,
-        })),
+        sessions: [...external.sessions]
+          .sort(
+            (a, b) =>
+              Number(b.status === "running") - Number(a.status === "running") ||
+              (b.updatedAt ?? 0) - (a.updatedAt ?? 0),
+          )
+          .slice(0, 40)
+          .map((s) => ({
+            provider: s.provider,
+            app: s.app,
+            machine: s.machine,
+            model: s.model,
+            title: s.title,
+            status: s.status,
+            summary: s.summary,
+            project: s.project,
+          })),
         issues: external.issues,
         scope: "本机最近的 Codex 与 Pi 会话，只读观察，未导入为可控制事项",
       },
@@ -175,7 +185,7 @@ export function progressReply(snapshot: Snapshot): string | undefined {
       "本机还有任务正在运行\n" +
       running
         .slice(0, 3)
-        .map((s: any) => `${s.provider === "pi" ? "Pi" : "Codex"}：${s.title}`)
+        .map((s: any) => `${s.app ?? (s.provider === "pi" ? "Opus Agent" : "Codex")} · ${s.project ?? s.title}`)
         .join("\n")
     );
   if (external?.issues.length) return "本机有部分会话状态暂时读不到\n我还不能断言全部任务都结束了";

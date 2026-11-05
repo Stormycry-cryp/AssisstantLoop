@@ -168,3 +168,40 @@ test("native completion reaches a real temporary hub once after a lost acknowled
     runtime.db.close();
   }
 });
+
+test("native Pi labels: application, project and model are reported separately", async () => {
+  const home = mkdtempSync(join(tmpdir(), "autoloop-observe-label-"));
+  let status = "running";
+  const scan = async () => ({
+    sessions: [
+      {
+        provider: "pi",
+        id: "manual",
+        turn: "one",
+        title: "review task",
+        status,
+        summary: "done",
+        app: "Opus Agent",
+        project: "Example Project",
+        model: "claude-opus-5-5",
+        machine: "本机",
+      },
+    ],
+    issues: [],
+  });
+  try {
+    let monitor = new ActivityMonitor(home, scan);
+    await monitor.tick({}, async () => assert.fail("baseline"));
+    status = "completed";
+    monitor = new ActivityMonitor(home, scan);
+    let text = "";
+    await monitor.tick({}, async (k, t) => {
+      text = t;
+    });
+    assert.match(text, /本机.*Opus Agent/);
+    assert.match(text, /Example Project/);
+    assert.match(text, /claude-opus-5-5/);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});

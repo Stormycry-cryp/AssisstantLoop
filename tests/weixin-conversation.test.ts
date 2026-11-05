@@ -410,3 +410,35 @@ test("Wechat status: manually started native activity is visible but never becom
   assert.match(f.sent[0], /手动运行的任务/);
   assert.equal(f.events.length, 0);
 });
+
+test("Wechat native labels: a running Opus application is prioritized and retains its project and actual model", () => {
+  const f = fixture({ reply: "在", actions: [] });
+  f.view.localActivity = {
+    issues: [],
+    sessions: [
+      ...Array.from({ length: 40 }, (_, i) => ({
+        provider: "codex",
+        id: String(i),
+        title: "old",
+        status: "completed",
+        summary: "",
+      })),
+      {
+        provider: "pi",
+        id: "manual",
+        title: "review",
+        status: "running",
+        summary: "",
+        app: "Opus Agent",
+        project: "Example Project",
+        model: "claude-opus-5-5",
+        machine: "本机",
+      },
+    ],
+  };
+  const s = makeSnapshot("哪些任务在跑", f.state, f.view).externalActivity!.sessions[0];
+  assert.equal(s.app, "Opus Agent");
+  assert.equal(s.project, "Example Project");
+  assert.equal(s.model, "claude-opus-5-5");
+  assert.equal((s as any).id, undefined);
+});
