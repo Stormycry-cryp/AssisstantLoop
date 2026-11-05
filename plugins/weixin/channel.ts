@@ -1,3 +1,5 @@
+import { ActivityMonitor, nativeScan } from "./activity.ts";
+import { systemSnapshot } from "./system.ts";
 import { homedir } from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -26,7 +28,20 @@ export default async function weixin({
     throw new Error("微信状态文件格式不符，保留原文件等待检查");
   const config = loadJson(path.join(home, "config.json"));
   if (!config.owner || typeof options.sourceKey !== "string") throw new Error("微信缺少本机来源或本人权限配置");
-  const owner = localHub(config.url, config.owner, signal);
+  const localOwner = localHub(config.url, config.owner, signal);
+  const activity =
+    options.observeLocalAgents === true ? new ActivityMonitor(home, nativeScan(home, signal)) : undefined;
+  const owner = {
+    ...localOwner,
+    state: async () => {
+      const view = await localOwner.state();
+      if (activity) {
+        await activity.refresh(view);
+        return { ...view, localActivity: activity.snapshot() };
+      }
+      return view;
+    },
+  };
   const source = localHub(config.url, options.sourceKey, signal);
   const frontdesk = new Frontdesk({
     model: String(options.frontdeskModel ?? "deepseek-v4.1-flash"),
@@ -45,6 +60,7 @@ export default async function weixin({
     save: () => saveJson(file, state),
     interpret: (snapshot, images) => frontdesk.interpret(snapshot, images),
     present: (card, snapshot) => frontdesk.present(card, snapshot),
+    inspect: systemSnapshot,
     images: (items, id) => images.load(items, id),
   });
   let reports = 0;
@@ -102,8 +118,19 @@ export default async function weixin({
       }
     }
   }
+  async function observe() {
+    if (!activity) return;
+    while (!signal.aborted) {
+      try {
+        await activity.tick(await localOwner.state(), source.tell);
+      } catch {
+        if (!signal.aborted) report("本机会话状态暂未确认，保留待汇报记录");
+      }
+      await delay(15000, undefined, { signal }).catch(() => {});
+    }
+  }
   try {
-    await Promise.all([receive(), deliver()]);
+    await Promise.all([receive(), deliver(), observe()]);
   } finally {
     await frontdesk.close();
     saveJson(file, state);

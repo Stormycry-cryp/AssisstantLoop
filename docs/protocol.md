@@ -400,3 +400,5 @@ Apple M5 Pro、24 GB、Node 24.21.0，用 `node scripts/history.ts 1000 10000 10
 Ship 使用本引擎仓库的 `plugins/delivery/action.yml`，项目固定到发布后的完整提交。Action 只输出 `release` 和 `superseded`，项目已有发布步骤根据输出运行。它与交付进程共用 `project.ts` 的范围与健康判断，不在项目里长期复制工具。
 
 普通健康 URL 只允许 HTTPS。测试时必须显式传 `--test-local-health`，Action 同样要 `test-local-health: 'true'`，才接受 `http://127.0.0.1`；不接受其他 HTTP 地址。GitHub 合并规则由项目维护者设置。
+
+外围通道可以在本人明确开启后只读观察本机会话，并用来源的稳定编号通知汇报；观察不是领取一轮任务，不能计入中台运行队列或据此控制原生会话。内核和 HTTP 协议不变。宿主附带的只读进程采样仍是事件资料，不能扩大任务权限。

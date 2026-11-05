@@ -1,4 +1,5 @@
 import type { State } from "./bridge.ts";
+import type { Activity } from "./activity.ts";
 import type { Image } from "./media.ts";
 
 export type Action = {
@@ -31,6 +32,7 @@ export type Dialogue = {
     index: number;
     replied: boolean;
     nightKey?: string;
+    inspection?: string;
     attachments?: { items: Omit<Image, "data">[]; summary: string };
   };
 };
@@ -89,6 +91,7 @@ export function makeSnapshot(message: string, state: State, view: any, now = Dat
   const allowDesktop =
     (view.agents ?? []).some((a: any) => a.id === "codex-desktop" && a.use === "codex-desktop") &&
     (state.selected === "desktop" || /桌面|desktop/i.test(message));
+  const external = view.localActivity as { sessions: Activity[]; issues: string[] } | undefined;
   return {
     message,
     ...(state.dialogue?.latestImages &&
@@ -99,6 +102,19 @@ export function makeSnapshot(message: string, state: State, view: any, now = Dat
           items: state.dialogue.latestImages.items.map(({ mimeType, sha256 }) => ({ mimeType, sha256 })),
         },
       }),
+    ...(external && {
+      externalActivity: {
+        sessions: view.localActivity.sessions.slice(0, 40).map((s: any) => ({
+          provider: s.provider,
+          title: s.title,
+          status: s.status,
+          summary: s.summary,
+          project: s.project,
+        })),
+        issues: external.issues,
+        scope: "本机最近的 Codex 与 Pi 会话，只读观察，未导入为可控制事项",
+      },
+    }),
     localTime: local,
     timezone: "Asia/Shanghai",
     memories: (state.dialogue?.memories ?? []).slice(-32),
@@ -136,6 +152,39 @@ export function makeSnapshot(message: string, state: State, view: any, now = Dat
       doneToday: view.totals?.doneToday ?? 0,
     },
   };
+}
+
+// Punctuation and progress pings do not authorize another round of work.
+export function progressReply(snapshot: Snapshot): string | undefined {
+  if (
+    !/^(?:[?？]+|(?:查得|做得|处理得)?怎么样了|结果呢|进度呢|进展呢|有结果了吗|查好了吗|还没好吗)[?？!！\s]*$/.test(
+      snapshot.message.trim(),
+    )
+  )
+    return;
+  const active = snapshot.activeRuns[0];
+  if (active) {
+    if (active.state === "queued") return "这件事还在排队\n" + active.summary;
+    if (active.state === "unknown") return "执行状态还没确认\n我还不能说已经完成";
+    return "这件事还在处理中\n" + active.summary;
+  }
+  const external = snapshot.externalActivity;
+  const running = external?.sessions.filter((s: any) => s.status === "running") ?? [];
+  if (running.length)
+    return (
+      "本机还有任务正在运行\n" +
+      running
+        .slice(0, 3)
+        .map((s: any) => `${s.provider === "pi" ? "Pi" : "Codex"}：${s.title}`)
+        .join("\n")
+    );
+  if (external?.issues.length) return "本机有部分会话状态暂时读不到\n我还不能断言全部任务都结束了";
+  const last = snapshot.targets[0];
+  if (!last) return "目前没有已交办的任务在跑\n也没有新的执行结果";
+  if (last.state === "failed") return "上次任务没完成\n" + last.summary;
+  if (last.state === "cancelled") return "上次任务已经停止\n" + last.summary;
+  if (/^待你处理[:：]/.test(last.summary)) return "上次任务卡在这里\n" + last.summary.replace(/^待你处理[:：]\s*/, "");
+  return "上次任务已经结束\n" + (last.summary || "没有返回可核实的结果");
 }
 
 export function parseDecision(value: any, snapshot: Snapshot): Decision {

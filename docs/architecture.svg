@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 680" role="img" aria-labelledby="t">
 <title id="t">Agent Autoloop 架构图：内核在中间，其他都是插件</title>
-<desc>AssisstantLoop 公开版保持内核和协议不变，独立 Pi 微信前台位于外围通道插件，使用 AgentPlan DeepSeek V4.1 Flash low 思考，负责自然转述和受限图片输入；图片路径与摘要沿现有文字协议续接任务；桌面 Codex 通过外围 codex-desktop 插件执行，原生轮次结束后外壳才确认回执</desc>
+<desc>AssisstantLoop 公开版保持内核和协议不变，独立 Pi 微信前台位于外围通道插件，使用 AgentPlan DeepSeek V4.1 Flash low 思考，负责自然转述和受限图片输入；图片路径与摘要沿现有文字协议续接任务；桌面 Codex 通过外围 codex-desktop 插件执行，原生轮次结束后外壳才确认回执；外围微信插件可选只读观察本机手工会话与固定进程采样</desc>
 <defs>
 <style>
 svg{--bg:#faf9f5;--ink:#1d1c19;--muted:#6e6b64;--line:#d6d3cb;--card:#fff;--item:#f4f2ec;--accent:#c2491d;--core:#1d1c19;--core-ink:#faf9f5;--core-duty:#33302a;--core-chip:#282621;--core-line:#423f38;--core-sub:#b9b5ab;--core-accent:#ef8a62;--tag-bg:#3d261c;--tag-ink:#ffb08e;--you-bg:#fff4ee}

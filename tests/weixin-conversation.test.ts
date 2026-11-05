@@ -348,3 +348,65 @@ test("Wechat conversation: real hub resumes natural answers with qualifiers and 
     rmSync(home, { recursive: true, force: true });
   }
 });
+
+test("Wechat progress: a bare question mark reports the existing blocked task without dispatching or calling the model", async () => {
+  const f = fixture({ reply: "再查一次", actions: [action("start", { agent: "codex", title: "重查" }) as any] });
+  f.view.runs[0].summary = "待你处理：进程查询被系统权限拦住";
+  for (const [index, text] of ["？", "?", "查得怎么样了", "结果呢"].entries()) {
+    await f.bridge.inbound(message(text, `progress-${index}`));
+  }
+  assert.equal(f.events.length, 0);
+  assert.equal(f.answers.length, 0);
+  assert.equal(f.interpretations(), 0);
+  assert.ok(f.sent.every((text) => /权限拦住/.test(text)));
+  assert.ok(f.sent.every((text) => !/我让|出结果|喊你/.test(text)));
+});
+
+test("Wechat progress: explicit reinspection still submits a new authorized task", async () => {
+  const f = fixture({
+    reply: "我重新查一下",
+    actions: [action("start", { agent: "codex", title: "重新查进程" }) as any],
+  });
+  await f.bridge.inbound(message("再查一次活跃进程"));
+  assert.equal(f.events.length, 1);
+  assert.equal(f.events[0].detail, "再查一次活跃进程");
+});
+
+test("Wechat process request: host facts are frozen once as event data, with the original request intact", async () => {
+  const f = fixture({ reply: "我查一下", actions: [action("start", { agent: "codex", title: "查进程" }) as any] });
+  let samples = 0,
+    fail = true;
+  const bridge = new Bridge(account, f.state, {
+    ...f.deps,
+    inspect: async () => {
+      samples++;
+      return "采样时间：2026-11-05T04:00:00Z\nprocess-data";
+    },
+    send: async (text) => {
+      if (fail) throw new Error("reply lost");
+      f.sent.push(text);
+    },
+  });
+  await assert.rejects(bridge.inbound(message("看下有没活跃进程")));
+  fail = false;
+  await bridge.inbound(message("看下有没活跃进程"));
+  assert.equal(samples, 1);
+  assert.equal(f.events.length, 1);
+  assert.match(f.events[0].detail, /^看下有没活跃进程/);
+  assert.match(f.events[0].detail, /process-data/);
+});
+
+test("Wechat status: manually started native activity is visible but never becomes an editable target", async () => {
+  const f = fixture({ reply: "已没有任务", actions: [] });
+  f.view.localActivity = {
+    sessions: [{ provider: "pi", id: "native", turn: "one", title: "手动运行的任务", status: "running", summary: "" }],
+    issues: [],
+  };
+  const snapshot = makeSnapshot("目前有任务在跑吗", f.state, f.view);
+  assert.equal(snapshot.externalActivity?.sessions[0].title, "手动运行的任务");
+  assert.ok(!snapshot.targets.some((t) => t.subject === "native"));
+  assert.throws(() => parseDecision({ reply: "停了", actions: [action("stop", { run: "native" })] }, snapshot));
+  await f.bridge.inbound(message("？"));
+  assert.match(f.sent[0], /手动运行的任务/);
+  assert.equal(f.events.length, 0);
+});

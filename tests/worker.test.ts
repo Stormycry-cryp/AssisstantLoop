@@ -232,15 +232,26 @@ test("a result waits for the hub and goes once; one it refuses is dropped, and s
 
 test("a run still going after the worker restarts stays, and its result still comes", async () => {
   const hub = fakeHub();
-  hub.jobs.push(job({ command: ["/bin/sh", "-c", "sleep 1; echo 慢慢做完了"] }));
+  const release = join(folder, "restart-release");
+  hub.jobs.push(
+    job({
+      command: [
+        process.execPath,
+        "-e",
+        `const fs=require('node:fs');const timer=setInterval(()=>{if(fs.existsSync(${JSON.stringify(release)})){clearInterval(timer);console.log('慢慢做完了')}},10);setTimeout(()=>process.exit(99),10000).unref()`,
+      ],
+    }),
+  );
   await worker(hub).tick();
   // A new worker, as after a restart: it has nothing in memory.
   const again = worker(hub);
   await again.tick();
   assert.equal(hub.results.length, 0, "still going isn't finished");
   assert.deepEqual(hub.claims.at(-1).running.length, 1, "it reports the run it found");
+  writeFileSync(release, "go");
   await until(again, () => hub.results.length === 1);
   assert.equal(hub.results[0].summary, "慢慢做完了");
+  rmSync(release);
 });
 
 test("an exit file written during the process check still delivers the finished result", async () => {

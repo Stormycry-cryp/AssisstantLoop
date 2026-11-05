@@ -4,7 +4,7 @@
 
 A small personal assistant for natural conversation, image input and task handoff through personal WeChat. An independent Pi front desk talks with you; the included AutoLoop kernel queues, resumes and records work; a backend agent performs it.
 
-Current release: **v0.1.2**. macOS / Linux, Node.js 24+, Git and npm. The first-run wizard uses an installed, authenticated Codex CLI as its backend. The independent front desk uses your own Volcengine Agent Plan key with `deepseek-v4.1-flash` and low reasoning; it does not reuse Codex authentication.
+Current release: **v0.1.3**. macOS / Linux, Node.js 24+, Git and npm. The first-run wizard uses an installed, authenticated Codex CLI as its backend. The independent front desk uses your own Volcengine Agent Plan key with `deepseek-v4.1-flash` and low reasoning; it does not reuse Codex authentication.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Stormycry-cryp/AssisstantLoop/main/install.sh | sh
@@ -42,3 +42,5 @@ npm run format:check
 Tests use isolated homes, fake models and transports. Actual WeChat authorization and delivery must be verified separately by each user. [MIT License](LICENSE).
 
 Desktop Codex can be a managed macOS executor, supporting new tasks and explicitly selected idle chats, continuation, reporting and stopping the owned turn. See the [desktop adapter](plugins/codex-desktop/README.md). This experimental local interface is desktop-version dependent.
+
+The WeChat front desk can optionally observe manually started local Codex/Pi sessions with read-only access. Progress pings do not create new jobs, and explicit process checks receive a fixed read-only host sample. See the [observer notes](plugins/weixin/README.md).

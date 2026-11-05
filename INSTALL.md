@@ -72,3 +72,5 @@ assisstantloop uninstall --yes
 开发检查与内核边界见 [AGENTS.md](AGENTS.md)。原始核心安装器保存在 `scripts/install-core.sh`，只用于上游兼容检查；公开版用户使用根目录安装器和 `assisstantloop setup`。
 
 桌面 Codex 可按[桌面插件](plugins/codex-desktop/README.md)作为独立执行者接入：支持新建任务和显式绑定已有空闲聊天，不改变首次人设与微信引导顺序，不自动纳管其他手工聊天。
+
+本机手工会话观察是可选项；用户同意后设置 `observeLocalAgents: true`，并按[微信说明](plugins/weixin/README.md#本机手工会话与进程读取)登记仅有 `orchestration:read` 的 Pi 观察凭据。不要复制其他安装的凭据，不把观察会话自动变成可操作任务。

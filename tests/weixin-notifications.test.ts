@@ -109,3 +109,37 @@ test("Wechat reports: model may suppress a redundant report, but ordinary chat c
     await desk.close();
   }
 });
+
+test("Wechat reports: a new task's only terminal receipt cannot disappear behind an older blocker", async () => {
+  const old = card(8, "ask", "open", { createdAt: "2026-11-03T00:00:00Z" });
+  const terminal = card(14, "notice", "closed", { text: "待你处理：进程查询被权限拦住" });
+  const f = setup([old], [terminal]);
+  f.state.deliveries["8"] = { version: 1, ref: "old-question", state: "open" };
+  f.deps.present = async () => null as any;
+  await f.bridge.deliver(terminal);
+  await f.bridge.deliver(terminal);
+  assert.equal(f.sent.length, 1);
+  assert.match(f.sent[0], /进程查询被权限拦住/);
+  assert.deepEqual(f.ack, [14, 14]);
+});
+
+test("Wechat reports: the business notice owning a terminal receipt must be sent even if the model says quiet", async () => {
+  const notice = card(19, "notice", "open", { text: "本轮已核实真实进程采样" }),
+    summary = card(20, "notice", "closed");
+  const f = setup([notice], [summary]);
+  f.deps.present = async () => null as any;
+  await f.bridge.deliver(summary);
+  await f.bridge.deliver(notice);
+  assert.equal(f.sent.length, 1);
+  assert.match(f.sent[0], /真实进程采样/);
+});
+test("Wechat reports: a wording failure cannot swallow an actual business result", async () => {
+  const notice = card(19, "notice", "open", { text: "本轮已核实真实进程采样" });
+  const f = setup([notice]);
+  f.deps.present = async () => {
+    throw new Error("model unavailable");
+  };
+  await f.bridge.deliver(notice);
+  assert.equal(f.sent.length, 1);
+  assert.match(f.sent[0], /真实进程采样/);
+});
